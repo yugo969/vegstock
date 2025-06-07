@@ -1,6 +1,4 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { NextRequest, NextResponse } from "next/server";
-import type { Database } from "@/types/supabase";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -36,42 +34,11 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Supabase認証チェック
-  const supabase = createMiddlewareClient<Database>({ req, res });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // 認証が必要なパス
-  const protectedPaths = ["/dashboard"];
-  const isProtectedPath = protectedPaths.some((path) =>
-    req.nextUrl.pathname.startsWith(path)
-  );
-
-  // 認証ページ
-  const authPaths = ["/login", "/signup"];
-  const isAuthPath = authPaths.some((path) =>
-    req.nextUrl.pathname.startsWith(path)
-  );
-
-  // 未認証でprotectedPathにアクセス → /loginにリダイレクト
-  if (isProtectedPath && !user) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  // 認証済みでauthPathにアクセス → /dashboardにリダイレクト
-  if (isAuthPath && user) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
-  // ルートパス → 認証状況に応じてリダイレクト
+  // 認証に関するミドルウェア処理を簡略化
+  // ルートアクセス時のみリダイレクトを実行し、
+  // 認証状態の管理はクライアントサイドに委ねる
   if (req.nextUrl.pathname === "/") {
-    if (user) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    } else {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return res;
