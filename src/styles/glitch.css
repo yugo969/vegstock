@@ -1,0 +1,66 @@
+/* グリッチエフェクト用CSS */
+
+.bg-neon-gradient {
+  background: linear-gradient(135deg, #00f5ff 0%, #7933ff 50%, #ff00e0 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.glitch {
+  position: relative;
+  color: #fff;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  clip-path: var(--glitch-slice, inset(0 0 0 0));
+  background: inherit;
+}
+
+.glitch::before {
+  left: 2px;
+  text-shadow: -2px 0 #00f5ff;
+}
+
+.glitch::after {
+  left: -2px;
+  text-shadow: 2px 0 #ff00e0;
+}
+
+.glitch:hover {
+  animation: glitchSlice 1s steps(8) infinite;
+}
+
+@keyframes glitchSlice {
+  0% {
+    --glitch-slice: inset(20% 0 60% 0);
+  }
+  20% {
+    --glitch-slice: inset(40% 0 20% 0);
+  }
+  40% {
+    --glitch-slice: inset(10% 0 80% 0);
+  }
+  60% {
+    --glitch-slice: inset(50% 0 30% 0);
+  }
+  80% {
+    --glitch-slice: inset(30% 0 50% 0);
+  }
+  100% {
+    --glitch-slice: inset(25% 0 55% 0);
+  }
+}
