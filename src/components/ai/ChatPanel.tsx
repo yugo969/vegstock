@@ -14,7 +14,20 @@ import {
   Loader2,
   TrendingUp,
   ShoppingCart,
+  MessageSquare,
+  BrainCircuit,
+  ShoppingBasket,
+  Mic,
+  MicOff,
 } from "lucide-react";
+import { toast } from "sonner";
+
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
 
 export function ChatPanel() {
   const [inputMessage, setInputMessage] = useState("");
@@ -24,6 +37,9 @@ export function ChatPanel() {
   const [shoppingList, setShoppingList] = useState<string | null>(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [loadingShoppingList, setLoadingShoppingList] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,13 +53,56 @@ export function ChatPanel() {
     getShoppingList,
   } = useAIChat();
 
-  // メッセージ送信
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+  const handleToggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
 
-    await sendMessage(inputMessage);
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("お使いのブラウザは音声認識に対応していません。");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "ja-JP";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0])
+        .map((result) => result.transcript)
+        .join("");
+      setInputMessage(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error", event.error);
+      toast.error(`音声認識エラー: ${event.error}`);
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+    sendMessage(inputMessage);
     setInputMessage("");
-    inputRef.current?.focus();
   };
 
   // Enterキーでメッセージ送信
@@ -171,23 +230,69 @@ export function ChatPanel() {
           </div>
 
           {/* 入力エリア */}
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="メッセージを入力..."
-              disabled={isLoading}
-              className="bg-surface-700 border-surface-600 focus:border-neon-primary"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
-              className="bg-neon-primary hover:bg-neon-primary-hover text-surface-900"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="flex-grow-0 p-4 bg-surface-800 border-t border-surface-600">
+            <div className="relative flex items-center gap-2">
+              <textarea
+                ref={textareaRef}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="ブロッコリーを2袋買った..."
+                className="w-full bg-surface-700 border-surface-600 rounded-lg p-2 pr-20 resize-none focus:ring-2 focus:ring-neon-primary"
+                rows={1}
+                disabled={isLoading}
+              />
+              <Button
+                onClick={handleToggleListening}
+                variant="ghost"
+                size="icon"
+                className="absolute right-12 text-gray-400 hover:text-neon-primary"
+                aria-label={isListening ? "音声入力を停止" : "音声入力を開始"}
+              >
+                {isListening ? (
+                  <MicOff className="h-5 w-5" />
+                ) : (
+                  <Mic className="h-5 w-5" />
+                )}
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={isLoading || !inputMessage.trim()}
+                className="absolute right-1"
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Button
+                onClick={handleGetAnalysis}
+                disabled={loadingAnalysis}
+                size="sm"
+                variant="outline"
+                className="border-surface-600 hover:border-neon-primary text-gray-300 hover:text-neon-primary"
+              >
+                {loadingAnalysis ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                )}
+                在庫分析
+              </Button>
+              <Button
+                onClick={handleGetShoppingList}
+                disabled={loadingShoppingList}
+                size="sm"
+                variant="outline"
+                className="border-surface-600 hover:border-neon-primary text-gray-300 hover:text-neon-primary"
+              >
+                {loadingShoppingList ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                )}
+                買い物リスト
+              </Button>
+            </div>
           </div>
 
           {/* 使用例 */}
