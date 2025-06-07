@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StockList } from "@/components/stocks/StockList";
+import { ChartDashboard } from "@/components/charts/ChartDashboard";
 import { toast } from "sonner";
 import { Package, BarChart3, MessageSquare, LogOut } from "lucide-react";
 
@@ -75,23 +76,7 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="charts" className="space-y-4">
-            <Card className="bg-surface-800 border-surface-600">
-              <CardHeader>
-                <CardTitle className="text-neon-primary">在庫グラフ</CardTitle>
-                <CardDescription className="text-gray-400">
-                  残日数と必要袋数の可視化
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <BarChart3 className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">グラフデータがありません</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    在庫データを追加するとグラフが表示されます
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <ChartDashboard />
           </TabsContent>
 
           <TabsContent value="chat" className="space-y-4">

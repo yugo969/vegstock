@@ -9,6 +9,9 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: false,
   },
+  css: {
+    postcss: {}, // PostCSS処理を最小限に
+  },
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
