@@ -116,7 +116,7 @@ export function StockList() {
   return (
     <div className="space-y-6">
       {/* 統計情報 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="bg-surface-800 border-surface-600">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -132,11 +132,11 @@ export function StockList() {
         <Card className="bg-surface-800 border-surface-600">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-yellow-400" />
+              <AlertTriangle className="h-8 w-8 text-red-400" />
               <div>
-                <p className="text-sm text-gray-400">在庫少</p>
-                <p className="text-2xl font-bold text-yellow-400">
-                  {lowStockCount}
+                <p className="text-sm text-gray-400">在庫切れ</p>
+                <p className="text-2xl font-bold text-red-400">
+                  {outOfStockCount}
                 </p>
               </div>
             </div>
@@ -146,11 +146,11 @@ export function StockList() {
         <Card className="bg-surface-800 border-surface-600">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-red-400" />
+              <AlertTriangle className="h-8 w-8 text-yellow-400" />
               <div>
-                <p className="text-sm text-gray-400">在庫切れ</p>
-                <p className="text-2xl font-bold text-red-400">
-                  {outOfStockCount}
+                <p className="text-sm text-gray-400">在庫少</p>
+                <p className="text-2xl font-bold text-yellow-400">
+                  {lowStockCount}
                 </p>
               </div>
             </div>
