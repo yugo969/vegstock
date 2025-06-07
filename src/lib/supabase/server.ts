@@ -1,16 +1,41 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
 
-// サーバーコンポーネント用
-export const createSupabaseServerClient = () => {
-  return createClient<Database>(supabaseUrl, supabaseAnonKey);
-};
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set({ name, value: "", ...options });
+        },
+      },
+    }
+  );
+}
 
 // 管理者用（サーバーサイドのみ）
-export const createSupabaseServiceClient = () => {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient<Database>(supabaseUrl, serviceRoleKey);
-};
+export function createSupabaseServiceClient() {
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        // 管理者クライアントは通常セッションを扱わないため、空の実装を提供
+        get: () => undefined,
+        set: () => {},
+        remove: () => {},
+      },
+    }
+  );
+}

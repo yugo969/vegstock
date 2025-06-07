@@ -1,47 +1,63 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  // Basic認証チェック（環境変数で制御）
-  const enableBasicAuth = process.env.ENABLE_BASIC_AUTH === "true";
-
-  if (enableBasicAuth) {
-    const basicAuth = req.headers.get("authorization");
-
-    if (!basicAuth) {
-      return new Response("Authentication required", {
-        status: 401,
-        headers: {
-          "WWW-Authenticate": 'Basic realm="Secure Area"',
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
         },
-      });
-    }
-
-    const authValue = basicAuth.split(" ")[1];
-    const [user, pwd] = atob(authValue).split(":");
-
-    const validUser = process.env.BASIC_AUTH_USER || "admin";
-    const validPass = process.env.BASIC_AUTH_PASS || "password";
-
-    if (user !== validUser || pwd !== validPass) {
-      return new Response("Invalid credentials", {
-        status: 401,
-        headers: {
-          "WWW-Authenticate": 'Basic realm="Secure Area"',
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
         },
-      });
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value: "",
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: "",
+            ...options,
+          });
+        },
+      },
     }
-  }
+  );
 
-  // 認証に関するミドルウェア処理を簡略化
-  // ルートアクセス時のみリダイレクトを実行し、
-  // 認証状態の管理はクライアントサイドに委ねる
-  if (req.nextUrl.pathname === "/") {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+  // セッションを更新し、認証状態を取得
+  await supabase.auth.getSession();
 
-  return res;
+  return response;
 }
 
 export const config = {

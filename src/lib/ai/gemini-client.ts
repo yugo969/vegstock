@@ -13,7 +13,7 @@ export class GeminiClient {
 
   constructor(apiKey: string) {
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   }
 
   /**
@@ -26,14 +26,14 @@ export class GeminiClient {
   ): Promise<string> {
     try {
       const systemPrompt = this.buildSystemPrompt(stocks, context);
-      const fullPrompt = `${systemPrompt}\n\nユーザーの質問: ${userMessage}`;
-
-      const result = await this.model.generateContent(fullPrompt);
+      const result = await this.model.generateContent(
+        systemPrompt + userMessage
+      );
       const response = await result.response;
       return response.text();
     } catch (error) {
       console.error("Gemini API error:", error);
-      throw new Error("AI応答の生成に失敗しました");
+      return "申し訳ありません、現在AIアシスタントは応答できません。";
     }
   }
 
@@ -49,7 +49,7 @@ export class GeminiClient {
       return response.text();
     } catch (error) {
       console.error("Gemini API error:", error);
-      throw new Error("在庫分析の生成に失敗しました");
+      return "申し訳ありません、在庫分析の生成中にエラーが発生しました。しばらくしてからもう一度お試しください。";
     }
   }
 
@@ -65,7 +65,7 @@ export class GeminiClient {
       return response.text();
     } catch (error) {
       console.error("Gemini API error:", error);
-      throw new Error("買い物リストの生成に失敗しました");
+      return "申し訳ありません、買い物リストの生成中にエラーが発生しました。";
     }
   }
 
@@ -75,26 +75,25 @@ export class GeminiClient {
   private buildSystemPrompt(stocks: Stock[], context?: string): string {
     const stockSummary = this.formatStockSummary(stocks);
 
-    return `あなたは冷凍野菜ストック管理アプリ「vegstock」のAIアシスタントです。
-ユーザーの冷凍野菜在庫管理をサポートします。
+    return `
+あなたは「vegstock」という冷凍野菜ストック管理アプリの、フレンドリーで親切なAIアシスタントです。
+ユーザーと自然な会話を行い、在庫管理を手伝ってください。
 
-【現在の在庫状況】
+# あなたの役割
+- ユーザーの入力を解釈し、在庫の追加、削除、数量変更などの操作を提案・実行します。
+- 在庫状況に関する質問に答えます。（例：「ブロッコリーの残りは？」）
+- ユーザーの入力が曖昧な場合は、明確にするための質問をしてください。
+- ユーザーが野菜の在庫管理、料理、買い物と全く関係のない話題を始めた場合は、「私は野菜の在庫管理を専門としていますので、その件については詳しくありませんが、何か在庫のことでお困りですか？」のように、丁寧に会話を本題に戻してください。
+- 回答は常に日本語で行ってください。
+
+# 現在の在庫状況
 ${stockSummary}
 
-【あなたの役割】
-- 在庫に関する質問に正確に回答する
-- 在庫管理のアドバイスを提供する
-- 買い物の提案をする
-- 料理のアイデアを提案する
-- 食材の保存方法をアドバイスする
+# 会話の文脈
+${context || "なし"}
 
-【回答の方針】
-- 簡潔で分かりやすい日本語で回答する
-- 具体的な数値や期間を含める
-- 実用的なアドバイスを心がける
-- 親しみやすい口調で話す
-
-${context ? `【追加コンテキスト】\n${context}` : ""}`;
+ユーザーの次のメッセージに回答してください：
+`;
   }
 
   /**

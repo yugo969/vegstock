@@ -1,8 +1,8 @@
-import { supabase } from "./client";
+import { getSupabaseBrowserClient } from "./client";
 import type { Stock, StockInsert, StockUpdate } from "@/types/supabase";
 
 export class StocksService {
-  private supabase = supabase;
+  private supabase = getSupabaseBrowserClient();
 
   /**
    * 現在のユーザーの在庫一覧を取得
