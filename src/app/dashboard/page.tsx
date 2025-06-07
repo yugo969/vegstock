@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StockList } from "@/components/stocks/StockList";
 import { toast } from "sonner";
 import { Package, BarChart3, MessageSquare, LogOut } from "lucide-react";
 
@@ -70,23 +71,7 @@ export default function DashboardPage() {
           </TabsList>
 
           <TabsContent value="stocks" className="space-y-4">
-            <Card className="bg-surface-800 border-surface-600">
-              <CardHeader>
-                <CardTitle className="text-neon-primary">在庫管理</CardTitle>
-                <CardDescription className="text-gray-400">
-                  冷凍野菜の在庫状況を管理します
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Package className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">在庫データがありません</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    在庫を追加して管理を開始しましょう
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <StockList />
           </TabsContent>
 
           <TabsContent value="charts" className="space-y-4">
