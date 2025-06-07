@@ -1,22 +1,30 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StockList } from "@/components/stocks/StockList";
 import { ChartDashboard } from "@/components/charts/ChartDashboard";
+import { ChatPanel } from "@/components/ai/ChatPanel";
 import { toast } from "sonner";
 import { Package, BarChart3, MessageSquare, LogOut } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
+  const router = useRouter();
+  const hasRedirected = useRef(false);
+
+  // 認証ガード - 未認証の場合はログインページにリダイレクト（一度だけ）
+  useEffect(() => {
+    if (!loading && !user && !hasRedirected.current) {
+      console.log("User not authenticated, redirecting to login");
+      hasRedirected.current = true;
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -24,8 +32,31 @@ export default function DashboardPage() {
       toast.error("ログアウトに失敗しました");
     } else {
       toast.success("ログアウトしました");
+      router.push("/login");
     }
   };
+
+  // 認証中の場合はローディング表示
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-surface-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-neon-primary text-lg">読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 未認証の場合は空の画面（リダイレクト処理中）
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-surface-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-400">認証確認中...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-900">
@@ -80,23 +111,7 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="chat" className="space-y-4">
-            <Card className="bg-surface-800 border-surface-600">
-              <CardHeader>
-                <CardTitle className="text-neon-primary">AIチャット</CardTitle>
-                <CardDescription className="text-gray-400">
-                  自然言語で在庫操作を行います
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <MessageSquare className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">AIチャット機能</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    「ブロッコリー3袋追加」などと話しかけてください
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <ChatPanel />
           </TabsContent>
         </Tabs>
       </main>

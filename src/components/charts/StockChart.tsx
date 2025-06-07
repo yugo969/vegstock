@@ -165,7 +165,7 @@ export function StockChart({ stocks, type = "both" }: StockChartProps) {
             family: "Inter",
             size: 11,
           },
-          callback: function (value: any) {
+          callback: function (value: number | string) {
             if (type === "remaining_days") {
               return `${value}日`;
             } else if (type === "shortfall_bags") {
@@ -189,7 +189,7 @@ export function StockChart({ stocks, type = "both" }: StockChartProps) {
               family: "Inter",
               size: 11,
             },
-            callback: function (value: any) {
+            callback: function (value: number | string) {
               return `${value}袋`;
             },
           },

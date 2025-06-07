@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,8 +19,18 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
+
+  // 認証状態が更新されたらダッシュボードにリダイレクト（一度だけ）
+  useEffect(() => {
+    if (user && !authLoading && !hasRedirected.current) {
+      console.log("User authenticated, redirecting to dashboard", user);
+      hasRedirected.current = true;
+      router.push("/dashboard");
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,17 +43,26 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      console.log("Starting login process...", { email });
       const { error } = await signIn(email, password);
 
       if (error) {
+        console.error("Login error:", error);
         toast.error(error.message || "ログインに失敗しました");
+        setLoading(false);
       } else {
+        console.log("Login successful, waiting for auth state update");
         toast.success("ログインしました");
-        router.push("/dashboard");
+        // 認証状態の更新を少し待ってからローディングを解除
+        setTimeout(() => {
+          if (!hasRedirected.current) {
+            setLoading(false);
+          }
+        }, 1000);
       }
     } catch (err) {
+      console.error("Login exception:", err);
       toast.error("予期しないエラーが発生しました");
-    } finally {
       setLoading(false);
     }
   };
