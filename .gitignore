@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI and development docs (will be managed as submodule)
+# .cursor/
+# cursor.rules
+
+# Supabase
+# .supabase
