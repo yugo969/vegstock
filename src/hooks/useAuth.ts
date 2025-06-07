@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { User, AuthError } from "@supabase/supabase-js";
-import { createSupabaseClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
 interface AuthState {
   user: User | null;
@@ -16,8 +16,6 @@ export function useAuth() {
     loading: true,
     error: null,
   });
-
-  const supabase = createSupabaseClient();
 
   useEffect(() => {
     // 初期認証状態を取得
@@ -63,7 +61,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, []); // 依存配列からsupabase.authを削除
 
   // ログイン
   const signIn = async (email: string, password: string) => {
