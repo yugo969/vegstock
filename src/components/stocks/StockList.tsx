@@ -5,9 +5,9 @@ import { StockCard } from "./StockCard";
 import { StockForm } from "./StockForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useStocks } from "@/hooks/useStocks";
-import type { Stock } from "@/types/supabase";
+import type { Stock, StockInsert } from "@/types/supabase";
 import { Search, Plus, Package, AlertTriangle } from "lucide-react";
 
 export function StockList() {
@@ -73,7 +73,7 @@ export function StockList() {
     (stock) => stock.stock_count_bag === 0
   ).length;
 
-  const handleFormSubmit = async (stockData: any) => {
+  const handleFormSubmit = async (stockData: Omit<StockInsert, "user_id">) => {
     if (editingStock) {
       const success = await updateStock(editingStock.id, stockData);
       if (success) {
@@ -174,7 +174,11 @@ export function StockList() {
             </div>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) =>
+                setSortBy(
+                  e.target.value as "name" | "remaining_days" | "updated_at"
+                )
+              }
               className="px-3 py-2 bg-surface-700 border border-surface-600 rounded-md text-white focus:border-neon-primary focus:outline-none"
             >
               <option value="updated_at">更新日順</option>

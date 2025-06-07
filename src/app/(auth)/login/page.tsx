@@ -41,7 +41,7 @@ export default function LoginPage() {
         toast.success("ログインしました");
         router.push("/dashboard");
       }
-    } catch (err) {
+    } catch {
       toast.error("予期しないエラーが発生しました");
     } finally {
       setLoading(false);

@@ -27,11 +27,6 @@ export function ChartDashboard() {
         stock.daily_usage_g,
         stock.stock_count_bag
       );
-      const shortfall = calculateShortfallBags(
-        stock.total_weight_g,
-        stock.daily_usage_g,
-        stock.stock_count_bag
-      );
 
       switch (filterType) {
         case "out_of_stock":

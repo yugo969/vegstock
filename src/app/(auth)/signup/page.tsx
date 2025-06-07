@@ -52,7 +52,7 @@ export default function SignupPage() {
         toast.success("アカウントを作成しました。確認メールをご確認ください。");
         router.push("/login");
       }
-    } catch (err) {
+    } catch {
       toast.error("予期しないエラーが発生しました");
     } finally {
       setLoading(false);
