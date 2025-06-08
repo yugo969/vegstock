@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAIChat, type ChatMessage } from "@/hooks/useAIChat";
 import {
   MessageCircle,
@@ -14,18 +13,45 @@ import {
   Loader2,
   TrendingUp,
   ShoppingCart,
-  MessageSquare,
-  BrainCircuit,
-  ShoppingBasket,
   Mic,
   MicOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
+interface SpeechRecognitionEvent {
+  results: {
+    [key: number]: {
+      [key: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start(): void;
+    stop(): void;
+    onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
+    onend: ((this: SpeechRecognition, ev: Event) => void) | null;
+    onresult:
+      | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void)
+      | null;
+    onerror:
+      | ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => void)
+      | null;
   }
 }
 
@@ -38,11 +64,10 @@ export function ChatPanel() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [loadingShoppingList, setLoadingShoppingList] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const {
     messages,
@@ -54,58 +79,58 @@ export function ChatPanel() {
   } = useAIChat();
 
   const handleToggleListening = () => {
+    if (typeof window === "undefined") return;
+
     if (isListening) {
-      recognitionRef.current?.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       setIsListening(false);
-      return;
+    } else {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "ja-JP";
+
+        recognition.onstart = () => {
+          setIsListening(true);
+        };
+
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+          const transcript = event.results[0][0].transcript;
+          setInputMessage(transcript);
+          setIsListening(false);
+        };
+
+        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+          console.error("音声認識エラー:", event.error);
+          toast.error("音声認識でエラーが発生しました");
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } else {
+        toast.error("音声認識はサポートされていません");
+      }
     }
-
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error("お使いのブラウザは音声認識に対応していません。");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "ja-JP";
-    recognition.interimResults = true;
-    recognition.continuous = false;
-
-    recognitionRef.current = recognition;
-
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0])
-        .map((result) => result.transcript)
-        .join("");
-      setInputMessage(transcript);
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error", event.error);
-      toast.error(`音声認識エラー: ${event.error}`);
-      setIsListening(false);
-    };
-
-    recognition.start();
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
-    sendMessage(inputMessage);
+    if (!inputMessage.trim() || isLoading) return;
+    const message = inputMessage.trim();
     setInputMessage("");
+    await sendMessage(message);
   };
 
-  // Enterキーでメッセージ送信
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -113,7 +138,6 @@ export function ChatPanel() {
     }
   };
 
-  // 在庫分析取得
   const handleGetAnalysis = async () => {
     setLoadingAnalysis(true);
     try {
@@ -121,13 +145,13 @@ export function ChatPanel() {
       setAnalysis(result);
       setShowAnalysis(true);
     } catch (error) {
-      console.error("Analysis error:", error);
+      console.error("分析取得エラー:", error);
+      toast.error("在庫分析の取得に失敗しました");
     } finally {
       setLoadingAnalysis(false);
     }
   };
 
-  // 買い物リスト取得
   const handleGetShoppingList = async () => {
     setLoadingShoppingList(true);
     try {
@@ -135,20 +159,21 @@ export function ChatPanel() {
       setShoppingList(result);
       setShowShoppingList(true);
     } catch (error) {
-      console.error("Shopping list error:", error);
+      console.error("買い物リスト取得エラー:", error);
+      toast.error("買い物リストの取得に失敗しました");
     } finally {
       setLoadingShoppingList(false);
     }
   };
 
-  // メッセージ一覧の最下部にスクロール
+  // メッセージが追加されたら自動スクロール
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // 初期フォーカス
   useEffect(() => {
-    inputRef.current?.focus();
+    textareaRef.current?.focus();
   }, []);
 
   return (
