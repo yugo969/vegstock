@@ -8,6 +8,14 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     css: false,
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/e2e/**",
+      "**/*.e2e.spec.ts",
+      "**/*.e2e.test.ts",
+    ],
+    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
   },
   css: {
     postcss: {}, // PostCSS処理を最小限に

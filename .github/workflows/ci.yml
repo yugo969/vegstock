@@ -97,7 +97,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install chromium
 
       - name: Create env file for E2E
         run: |
@@ -107,7 +107,7 @@ jobs:
           echo "GEMINI_API_KEY=example_gemini_key" >> .env.local
 
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npx playwright test --project=chromium
 
       - name: Upload E2E test results
         uses: actions/upload-artifact@v4
