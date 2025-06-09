@@ -14,10 +14,15 @@ test.describe("Authentication Flow", () => {
     await expect(page).toHaveURL(/.*\/login/);
 
     // ログインページの要素が表示されることを確認
-    await expect(page.locator("h1")).toContainText("ログイン");
+    // 実際にはCardTitleに「vegstock」が含まれている
+    await expect(page.getByText("vegstock")).toBeVisible();
+    await expect(page.getByText("冷凍野菜ストック管理アプリ")).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
+
+    // ログインボタンのテキストを確認
+    await expect(page.getByRole("button", { name: "ログイン" })).toBeVisible();
   });
 
   test("should display signup page", async ({ page }) => {
@@ -25,10 +30,19 @@ test.describe("Authentication Flow", () => {
     await page.goto("/signup");
 
     // サインアップページの要素が表示されることを確認
-    await expect(page.locator("h1")).toContainText("新規登録");
+    await expect(page.getByText("vegstock")).toBeVisible();
+    await expect(page.getByText("新規アカウント作成")).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
-    await expect(page.locator('input[type="password"]')).toBeVisible();
+
+    // 複数のパスワードフィールドがあるため、より具体的に指定
+    await expect(page.locator('input[id="password"]')).toBeVisible();
+    await expect(page.locator('input[id="confirmPassword"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
+
+    // アカウント作成ボタンのテキストを確認
+    await expect(
+      page.getByRole("button", { name: "アカウント作成" })
+    ).toBeVisible();
   });
 
   test("should show validation errors for invalid login", async ({ page }) => {
@@ -37,14 +51,17 @@ test.describe("Authentication Flow", () => {
     // 空のフォームで送信を試行
     await page.click('button[type="submit"]');
 
-    // 何らかのバリデーションメッセージまたはエラーが表示されることを確認
-    // (実際の実装に応じて調整が必要)
+    // Toast通知または何らかのフィードバックを確認
+    // ここではフォームの基本的な存在と要素の確認に留める
     const emailInput = page.locator('input[type="email"]');
-    const passwordInput = page.locator('input[type="password"]');
+    const passwordInput = page.locator('input[id="password"]');
 
     // HTML5バリデーションまたはカスタムバリデーションをチェック
     await expect(emailInput).toBeVisible();
     await expect(passwordInput).toBeVisible();
+
+    // フォームの基本的な動作確認
+    await expect(page.getByRole("button", { name: "ログイン" })).toBeVisible();
   });
 
   test("should have navigation between login and signup", async ({ page }) => {
@@ -63,5 +80,26 @@ test.describe("Authentication Flow", () => {
       await loginLink.click();
       await expect(page).toHaveURL(/.*\/login/);
     }
+  });
+
+  test("should display proper form labels and placeholders", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+
+    // フォームの要素とラベルを確認
+    await expect(page.getByText("メールアドレス")).toBeVisible();
+    await expect(page.getByText("パスワード")).toBeVisible();
+    await expect(page.getByPlaceholder("your@email.com")).toBeVisible();
+    await expect(page.getByPlaceholder("パスワード")).toBeVisible();
+  });
+
+  test("should display signup form fields correctly", async ({ page }) => {
+    await page.goto("/signup");
+
+    // サインアップ特有のフィールドを確認
+    await expect(page.getByText("パスワード（6文字以上）")).toBeVisible();
+    await expect(page.getByText("パスワード確認")).toBeVisible();
+    await expect(page.getByPlaceholder("パスワード確認")).toBeVisible();
   });
 });
